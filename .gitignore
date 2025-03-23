@@ -1,0 +1,5 @@
+*.jpg
+train-image/
+catboost_info/
+*.csv
+*hdf5
