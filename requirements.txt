@@ -1,0 +1,8 @@
+torch>=2.0
+torchvision
+numpy
+matplotlib
+tqdm
+pillow
+opencv-python
+denoising-diffusion-pytorch
