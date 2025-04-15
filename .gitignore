@@ -4,3 +4,11 @@ catboost_info/
 *.csv
 *hdf5
 *.png
+data/
+augmented_images/
+Diffusion_Attempt/Generated_images_v1/
+Diffusion_Attempt/Generated_images_v2/
+Diffusion_Attempt/Generated_images_v3/
+Diffusion_Attempt/sample_outputs/
+Diffusion_Attempt/saved_models/
+ResNet50_Baseline/checkpoints/
