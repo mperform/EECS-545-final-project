@@ -18,8 +18,9 @@ class Trainer:
         self.transform = transform
         self.model = model
         if isinstance(self.model.classifier, nn.Sequential): # EfficientNet
-            in_features = self.model.classifier[-1].in_features
-            self.model.classifier[-1] = nn.Linear(in_features, 1)
+            print("EfficientNet Configuration")
+            in_features = self.model.classifier[1].in_features
+            self.model.classifier[1] = nn.Linear(in_features, 1)
         elif isinstance(self.model.classifier, nn.Linear): # DenseNet
             in_features = self.model.classifier.in_features
             self.model.classifier = nn.Linear(in_features, 1)
