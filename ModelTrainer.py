@@ -17,7 +17,14 @@ class Trainer:
         self.weights = weights
         self.transform = transform
         self.model = model
-        self.model.classifier = nn.Linear(self.model.classifier.in_features, 1)
+        if isinstance(self.model.classifier, nn.Sequential): # EfficientNet
+            in_features = self.model.classifier[-1].in_features
+            self.model.classifier[-1] = nn.Linear(in_features, 1)
+        elif isinstance(self.model.classifier, nn.Linear): # DenseNet
+            in_features = self.model.classifier.in_features
+            self.model.classifier = nn.Linear(in_features, 1)
+        else:
+            raise ValueError("Unexpected model classifier structure.")
         self.model = self.model.to(self.device)
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
@@ -31,8 +38,8 @@ class Trainer:
         self.partial_aucs = []
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
-        self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=1)
-        self.val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=1)
+        self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
+        self.val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=1)
         self.nn_name = nn_name
         
         # make directory for saving checkpoints
