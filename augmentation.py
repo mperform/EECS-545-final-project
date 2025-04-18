@@ -59,9 +59,14 @@ for idx, img in tqdm(zip(images_idx, train_images), total=len(train_images), des
         aug_tensor = augmentation(img_uint8)  # Tensor CxHxW
         aug_img_np = (aug_tensor.permute(1, 2, 0).numpy() * 255).astype(np.uint8)
 
-        new_id = f"{idx}_aug{j}"
-        hdf5_file.create_dataset(new_id, data=aug_img_np, dtype='uint8')
+        new_id = f"{train_metadata.iloc[idx]['isic_id']}_aug{j}"
+        success, encoded_img = cv2.imencode(".png", aug_img_np)
+        if not success:
+            print(f"[Warning] Failed to encode {new_id}")
+            continue
 
+        # Store encoded image as bytes
+        hdf5_file.create_dataset(new_id, data=encoded_img)
         augmented_metadata.append(train_metadata.iloc[idx].to_dict())
         
 hdf5_file.close()
