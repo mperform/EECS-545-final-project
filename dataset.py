@@ -28,11 +28,14 @@ class HDF5Dataset(Dataset):
     def __getitem__(self, idx):
         image = self.images[idx]
         label = self.labels[idx]
-        
+    
         if isinstance(image, np.ndarray):
+            # First ensure it's uint8
+            if image.dtype != np.uint8:
+                image = (image * 255).astype(np.uint8)
             image = Image.fromarray(image)
-        
+    
         if self.transform:
             image = self.transform(image)
-        
+            
         return image, torch.tensor(label, dtype=torch.float32)

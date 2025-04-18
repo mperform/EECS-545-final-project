@@ -9,6 +9,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from torch import nn
 from tqdm import tqdm
 from isic_metric import score
+from sklearn.metrics import roc_auc_score, roc_curve
 
 class Trainer:
     def __init__(self, device, train_dataset, val_dataset, nn_name, weights, transform, model, lr=1e-5, num_epochs=20):
@@ -73,7 +74,7 @@ class Trainer:
                     targets.extend(labels.cpu().numpy())
 
             self.val_losses.append(val_loss / len(self.val_loader))
-            val_auc = self.roc_auc_score(targets, preds)
+            val_auc = roc_auc_score(targets, preds)
             
             # Threshold predictions at 0.5
             pred_labels = (np.array(preds) >= 0.5).astype(int)
