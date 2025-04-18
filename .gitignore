@@ -4,6 +4,8 @@ catboost_info/
 *.csv
 *hdf5
 *.png
+*.pyc
+*.pth
 data/
 augmented_images/
 Diffusion_Attempt/Generated_images_v1/
