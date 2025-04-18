@@ -17,15 +17,15 @@ class Trainer:
         self.weights = weights
         self.transform = transform
         self.model = model
-        if isinstance(self.model.classifier, nn.Sequential): # EfficientNet
+        if nn_name == "EfficientNet-B3": # EfficientNet
             print("EfficientNet Configuration")
             in_features = self.model.classifier[1].in_features
             self.model.classifier[1] = nn.Linear(in_features, 1)
-        elif isinstance(self.model.classifier, nn.Linear): # DenseNet
+        elif nn_name == "DenseNet121": # DenseNet
             in_features = self.model.classifier.in_features
             self.model.classifier = nn.Linear(in_features, 1)
-        else:
-            raise ValueError("Unexpected model classifier structure.")
+        elif nn_name == "ResNet50": # ResNet
+            model.fc = nn.Linear(model.fc.in_features, 1)
         self.model = self.model.to(self.device)
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
