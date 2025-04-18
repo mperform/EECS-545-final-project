@@ -19,6 +19,7 @@ train_metadata = pd.read_csv(original_metadata_path,low_memory=False)
 train_hdf5 = h5py.File(original_hdf5_path, 'r')
 
 train_images = []
+images_idx = []
 for i in tqdm(range(len(train_metadata))):
     if train_metadata.iloc[i]['target'] == 0: # skip non-target images
         continue
@@ -29,8 +30,9 @@ for i in tqdm(range(len(train_metadata))):
     image = cv2.resize(image, (128, 128))
     image = image / 255
     train_images.append(image)
+    images_idx.append(i)
 train_images = np.array(train_images)
-
+train_hdf5.close()
 
 print(f"Training images shape: {train_images.shape}")
 
@@ -48,16 +50,16 @@ augmentation = transforms.Compose([
 hdf5_file = h5py.File(augmented_hdf5_path, "w")
 augmented_metadata = []
 
-for idx, img in tqdm(enumerate(train_images), total=len(train_images), desc="Augmenting"):
-    orig_isic_id = train_metadata.iloc[idx]['isic_id']
-    target = train_metadata.iloc[idx]['target']
+for idx, img in tqdm(zip(images_idx, train_images), total=len(train_images), desc="Augmenting"):
+    # orig_isic_id = train_metadata.iloc[idx]['isic_id']
+    # target = train_metadata.iloc[idx]['target']
     img_uint8 = (img * 255).astype("uint8")
     
     for j in range(n_augmentations):
         aug_tensor = augmentation(img_uint8)  # Tensor CxHxW
         aug_img_np = (aug_tensor.permute(1, 2, 0).numpy() * 255).astype(np.uint8)
 
-        new_id = f"{orig_isic_id}_aug{j}"
+        new_id = f"{idx}_aug{j}"
         hdf5_file.create_dataset(new_id, data=aug_img_np, dtype='uint8')
 
         augmented_metadata.append(train_metadata.iloc[idx].to_dict())
