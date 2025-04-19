@@ -7,3 +7,4 @@ pillow
 opencv-python
 denoising-diffusion-pytorch
 xgboost
+lightgbm
