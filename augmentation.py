@@ -67,7 +67,9 @@ for idx, img in tqdm(zip(images_idx, train_images), total=len(train_images), des
 
         # Store encoded image as bytes
         hdf5_file.create_dataset(new_id, data=encoded_img)
-        augmented_metadata.append(train_metadata.iloc[idx].to_dict())
+        temp = train_metadata.iloc[idx]
+        temp['isic_id'] = new_id
+        augmented_metadata.append(temp.to_dict())
         
 hdf5_file.close()
 augmented_metadata_df = pd.DataFrame(augmented_metadata)
