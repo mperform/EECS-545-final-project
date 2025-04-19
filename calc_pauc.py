@@ -36,13 +36,13 @@ class pAUC:
                 i += 1
                 
         df_gt = pd.DataFrame({
-            "image_id": list(range(len(self.test_isic_id))),
-            "target": self.y_test  # ground truth labels
+            "image_id": self.test_isic_id,
+            "target": self.y_test
         })
-        
+
         df_pred = pd.DataFrame({
-            "image_id": list(range(len(self.test_predictions))),
-            "target": self.test_predictions  # prediction probabilities
+            "image_id": self.test_isic_id,
+            "target": self.test_predictions
         })
         
         pAUC = score(df_gt, df_pred, row_id_column_name="image_id", min_tpr=0.80)
