@@ -27,17 +27,17 @@ class Trainer:
         elif nn_name == "ResNet50": # ResNet
             model.fc = nn.Linear(model.fc.in_features, 1)
         self.model = self.model.to(self.device)
-        # # handle imbalance dataset
-        # labels_list = [label for _, label in train_dataset]
-        # labels_tensor = torch.tensor(labels_list)
+        # handle imbalance dataset
+        labels_list = [label for _, label in train_dataset]
+        labels_tensor = torch.tensor(labels_list)
         
-        # num_neg = (labels_tensor == 0).sum().item()
-        # num_pos = (labels_tensor == 1).sum().item()
+        num_neg = (labels_tensor == 0).sum().item()
+        num_pos = (labels_tensor == 1).sum().item()
         
-        # # compute pos_weight
-        # pos_weight = torch.tensor([num_neg / num_pos], dtype=torch.float).to(self.device)
-        
-        # self.criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        # compute pos_weight
+        pos_weight = torch.tensor([num_neg / num_pos], dtype=torch.float).to(self.device)
+        print(f'Using pos_weight criterion: {pos_weight}')
+        self.criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.num_epochs = num_epochs
