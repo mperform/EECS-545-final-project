@@ -81,7 +81,7 @@ class Trainer:
             preds, targets = [], []
 
             with torch.no_grad():
-                for inputs, labels in self.val_loader:
+                for inputs, labels in tqdm(self.val_loader, desc=f"Validation"):
                     inputs = inputs.to(self.device)
                     labels = labels.float().unsqueeze(1).to(self.device)
 
