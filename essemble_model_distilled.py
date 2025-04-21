@@ -28,6 +28,8 @@ import cv2
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import os
 from torch.utils.data import Dataset
 from torchvision import transforms, models
@@ -228,15 +230,15 @@ num_epochs = 20
 dense_net_trainer = Trainer(device, densenet_train_dataset, densenet_val_dataset, "DenseNet121", densenet_weights, densenet_transform, densenet_model, malignant_count, benign_count, lr, num_epochs)
 
 # %%
-dense_net_trainer.train()
+# dense_net_trainer.train()
 
 # %% [markdown]
 # ### Load model if already trained and calculate pAUC
 
 # %%
-# densenet_model_path = "DenseNet121_checkpoints/DenseNet121_epoch_20.pth"
-# densenet_checkpoint = torch.load(densenet_model_path, weights_only=False, map_location=device)
-# dense_net_trainer.model.load_state_dict(densenet_checkpoint['model_state_dict'])
+densenet_model_path = "DenseNet121_checkpoints/DenseNet121_epoch_20.pth"
+densenet_checkpoint = torch.load(densenet_model_path, weights_only=False, map_location=device)
+dense_net_trainer.model.load_state_dict(densenet_checkpoint['model_state_dict'])
 
 # %% [markdown]
 # ### Calculate test pAUC 
@@ -245,8 +247,8 @@ dense_net_trainer.train()
 from calc_pauc import pAUC
 dense_net_trainer.model.eval()
 calc_pAUC = pAUC(device, dense_net_trainer.model, dense_net_trainer.transform, X_test, y_test,  metadata_test)
-calc_pAUC.compute_pAUC()
-print(f"pAUC for densenet: {calc_pAUC.pAUC}")
+pauc_score = calc_pAUC.compute_pAUC()
+print(f"pAUC for densenet: {pauc_score}")
 
 # %% [markdown]
 # ## EfficientNet
@@ -279,8 +281,9 @@ efficientnet_trainer.train()
 # %%
 efficientnet_model.eval()
 calc_pAUC = pAUC(device, efficientnet_trainer.model, efficientnet_trainer.transform, X_test, y_test,  metadata_test)
-calc_pAUC.compute_pAUC()
-print(f"pAUC for efficientnet: {calc_pAUC.pAUC}")
+pAUC_efficientnet = calc_pAUC.compute_pAUC()
+
+print(f"pAUC for efficientnet: {pAUC_efficientnet}")
 
 # %% [markdown]
 # ## ResNet50
@@ -317,8 +320,8 @@ resnet_trainer.train()
 # %%
 resnet_model.eval()
 calc_pAUC = pAUC(device, resnet_trainer.model, resnet_trainer.transform, X_test, y_test,  metadata_test)
-calc_pAUC.compute_pAUC()
-print(f"pAUC for resnet: {calc_pAUC.pAUC}")
+pAUC_resnet = calc_pAUC.compute_pAUC()
+print(f"pAUC for resnet: {pAUC_resnet}")
 
 # %% [markdown]
 # ## Output predictions for train/val/test for all CNN models

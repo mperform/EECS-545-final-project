@@ -144,7 +144,6 @@ class Trainer:
         plt.title(f"{self.nn_name} Training Loss")
         plt.legend()
         plt.savefig(f"{self.nn_name}_loss_curve.png")
-        
         # plot pAUC
         epochs = list(range(1, self.num_epochs + 1))
 
