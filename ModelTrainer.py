@@ -38,7 +38,7 @@ class Trainer:
         pos_weight = torch.tensor([num_neg / num_pos], dtype=torch.float).to(self.device)
         print(f'Using pos_weight criterion: {pos_weight}')
         self.criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-        self.criterion = nn.BCEWithLogitsLoss()
+        # self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.num_epochs = num_epochs
         self.train_losses = []
