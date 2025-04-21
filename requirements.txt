@@ -8,3 +8,6 @@ opencv-python
 denoising-diffusion-pytorch
 xgboost
 lightgbm
+h5py
+pandas
+scikit-learn
