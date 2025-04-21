@@ -12,7 +12,7 @@ from isic_metric import score
 from sklearn.metrics import roc_auc_score, roc_curve
 
 class Trainer:
-    def __init__(self, device, train_dataset, val_dataset, nn_name, weights, transform, model, lr=1e-5, num_epochs=20):
+    def __init__(self, device, train_dataset, val_dataset, nn_name, weights, transform, model, num_pos, num_neg, lr=1e-5, num_epochs=20):
         self.device = device
         self.weights = weights
         self.transform = transform
@@ -28,11 +28,11 @@ class Trainer:
             model.fc = nn.Linear(model.fc.in_features, 1)
         self.model = self.model.to(self.device)
         # handle imbalance dataset
-        labels_list = [label for _, label in train_dataset]
-        labels_tensor = torch.tensor(labels_list)
+        # labels_list = [label for _, label in train_dataset]
+        # labels_tensor = torch.tensor(labels_list)
         
-        num_neg = (labels_tensor == 0).sum().item()
-        num_pos = (labels_tensor == 1).sum().item()
+        # num_neg = (labels_tensor == 0).sum().item()
+        # num_pos = (labels_tensor == 1).sum().item()
         
         # compute pos_weight
         pos_weight = torch.tensor([num_neg / num_pos], dtype=torch.float).to(self.device)
