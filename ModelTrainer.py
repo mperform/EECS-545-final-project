@@ -50,8 +50,8 @@ class Trainer:
         self.partial_aucs = []
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
-        self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=1)
-        self.val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=1)
+        self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=0)
+        self.val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=0)
         self.nn_name = nn_name
         
         # make directory for saving checkpoints
