@@ -1,7 +1,8 @@
-# %% [markdown]
+#!/usr/bin/env python
+# coding: utf-8
+
 # # Assemble Model using DenseNet, EfficientNet, ResNet50, XGBoost, Light GBM, and CatBoost
 
-# %% [markdown]
 # ## Here's datasets you will need
 # - train-image.hdf5
 # - train-metadata.csv
@@ -16,10 +17,11 @@
 # - EfficientNet-B3_checkpoints/EfficientNet-B3_epoch_20.pth
 # - ResNet50_checkpoints/ResNet50_epoch_20.pth
 
-# %% [markdown]
 # ## Dependencies
 
-# %%
+# In[6]:
+
+
 import numpy as np
 import pandas as pd
 import h5py
@@ -65,7 +67,10 @@ class HDF5Dataset(Dataset):
         # Directly return float tensor
         return image, torch.tensor(label, dtype=torch.float32)
 
-# %%
+
+# In[7]:
+
+
 import numpy as np
 import pandas as pd
 import h5py
@@ -86,25 +91,32 @@ from tqdm import tqdm
 from sklearn.metrics import roc_auc_score, roc_curve
 from isic_metric import score
 
-# %%
+
+# In[8]:
+
+
 # check GPU availability
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# %% [markdown]
+
 # ## Data Loading
 
-# %%
+# In[9]:
+
+
 images = []
 labels = []
 metadata = []
 malignant_count = 0
 benign_count = 0
 
-# %% [markdown]
+
 # ### First, load all data from original database
 
-# %%
+# In[10]:
+
+
 # load isic_ids from 3 csv files
 test_ids = pd.read_csv("test_id.csv")["isic_id"].tolist()
 train_ids = pd.read_csv("train_id.csv")["isic_id"].tolist()
@@ -114,17 +126,22 @@ val_ids = pd.read_csv("val_id.csv")["isic_id"].tolist()
 # val_ids = val_ids[:150]
 # test_ids = test_ids[:250]
 
-# %% [markdown]
+
 # ## read in each section
 
-# %%
+# In[11]:
+
+
 original_train_hdf5_path = 'train-image.hdf5'
 original_train_metadata_path = 'train-metadata.csv'
 original_train_metadata = pd.read_csv(original_train_metadata_path,low_memory=False)   
 original_train_metadata.set_index('isic_id', inplace=True)
 original_train_hdf5 = h5py.File(original_train_hdf5_path, 'r')
 
-# %%
+
+# In[12]:
+
+
 X_train = []
 y_train = []
 metadata_train = []
@@ -135,7 +152,10 @@ X_test = []
 y_test = []
 metadata_test = []
 
-# %%
+
+# In[13]:
+
+
 def load_images_and_labels(hdf5_file, metadata_df, id_list):
     images = []
     labels = []
@@ -163,23 +183,34 @@ def load_images_and_labels(hdf5_file, metadata_df, id_list):
 
     return images, labels, meta_records
 
-# %%
+
+# In[14]:
+
+
 X_train, y_train, metadata_train = load_images_and_labels(original_train_hdf5, original_train_metadata, train_ids)
 X_val, y_val, metadata_val = load_images_and_labels(original_train_hdf5, original_train_metadata, val_ids)
 X_test, y_test, metadata_test = load_images_and_labels(original_train_hdf5, original_train_metadata, test_ids)
 
 
-# %%
+# In[15]:
+
+
 malignant_count = sum(y == 1 for y in y_train)
 benign_count = sum(y == 0 for y in y_train)
 print(f"Malignant count: {malignant_count}")
 print(f"Benign count: {benign_count}")
 
-# %%
+
+# In[16]:
+
+
 # print first test metadata
 print(metadata_test[0]['isic_id'])
 
-# %%
+
+# In[17]:
+
+
 print(f'Training data: {len(X_train)}')
 print(f'Validation data: {len(X_val)}')
 print(f'Test data: {len(X_test)}')
@@ -189,17 +220,21 @@ print(f'Metadata Test data: {len(metadata_test)}')
 print(f'Malignant count: {malignant_count}')
 print(f'Benign count: {benign_count}')
 
-# %% [markdown]
+
 # ## Load CNN models
 
-# %%
+# In[18]:
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# %% [markdown]
+
 # ### DenseNet
 
-# %%
+# In[19]:
+
+
 import torch.optim as optim
 import torch
 import numpy as np
@@ -257,8 +292,8 @@ class Trainer:
         self.partial_aucs = []
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
-        self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=0, pin_memory=True)
-        self.val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=0, pin_memory=True)
+        self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=0, pin_memory=True)
+        self.val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=0, pin_memory=True)
         self.nn_name = nn_name
         
         # make directory for saving checkpoints
@@ -368,43 +403,55 @@ class Trainer:
         plt.tight_layout()
         plt.savefig(f"{self.nn_name}_partial_auc_curve.png")
 
-# %%
-# from torchvision.models import densenet121, DenseNet121_Weights
-# # from ModelTrainer import Trainer
-# densenet_weights = DenseNet121_Weights.DEFAULT
-# densenet_transform = densenet_weights.transforms()
-# densenet_train_dataset = HDF5Dataset(X_train, y_train, augment=True, transform=densenet_transform)
-# densenet_val_dataset = HDF5Dataset(X_val, y_val, augment=False, transform=densenet_transform)
-# densenet_model = densenet121(weights=densenet_weights)
-# lr = 1e-5
-# num_epochs = 20
-# dense_net_trainer = Trainer(device, densenet_train_dataset, densenet_val_dataset, "DenseNet121", densenet_weights, densenet_transform, densenet_model, malignant_count, benign_count, lr, num_epochs)
 
-# %%
-# dense_net_trainer.train()
+# In[20]:
 
-# %% [markdown]
+
+from torchvision.models import densenet121, DenseNet121_Weights
+# from ModelTrainer import Trainer
+densenet_weights = DenseNet121_Weights.DEFAULT
+densenet_transform = densenet_weights.transforms()
+densenet_train_dataset = HDF5Dataset(X_train, y_train, augment=True, transform=densenet_transform)
+densenet_val_dataset = HDF5Dataset(X_val, y_val, augment=False, transform=densenet_transform)
+densenet_model = densenet121(weights=densenet_weights)
+lr = 1e-5
+num_epochs = 20
+dense_net_trainer = Trainer(device, densenet_train_dataset, densenet_val_dataset, "DenseNet121", densenet_weights, densenet_transform, densenet_model, malignant_count, benign_count, lr, num_epochs)
+
+
+# In[21]:
+
+
+dense_net_trainer.train()
+
+
 # ### Load model if already trained and calculate pAUC
 
-# %%
+# In[22]:
+
+
 # densenet_model_path = "DenseNet121_checkpoints/DenseNet121_epoch_20.pth"
 # densenet_checkpoint = torch.load(densenet_model_path, weights_only=False, map_location=device)
 # dense_net_trainer.model.load_state_dict(densenet_checkpoint['model_state_dict'])
 
-# %% [markdown]
+
 # ### Calculate test pAUC 
 
-# %%
-# from calc_pauc import pAUC
-# dense_net_trainer.model.eval()
-# calc_pAUC = pAUC(device, dense_net_trainer.model, dense_net_trainer.transform, X_test, y_test,  metadata_test)
-# pAUC_val = calc_pAUC.compute_pAUC()
-# print(f"pAUC for densenet: {pAUC_val}")
+# In[23]:
 
-# %% [markdown]
+
+from calc_pauc import pAUC
+dense_net_trainer.model.eval()
+calc_pAUC = pAUC(device, dense_net_trainer.model, dense_net_trainer.transform, X_test, y_test,  metadata_test)
+pAUC_val = calc_pAUC.compute_pAUC()
+print(f"pAUC for densenet: {pAUC_val}")
+
+
 # ## EfficientNet
 
-# %%
+# In[24]:
+
+
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
 import gc
 # efficientnet_weights = EfficientNet_B3_Weights.DEFAULT
@@ -421,72 +468,91 @@ del efficientnet_train_dataset
 del efficientnet_val_dataset
 gc.collect()
 
-# %%
-# efficientnet_trainer.train()
 
-# %% [markdown]
+# In[25]:
+
+
+efficientnet_trainer.train()
+
+
 # ### Load EfficientNet Model if already trained and compute pAUC
 
-# %%
-efficientnet_model_path = "EfficientNet-B3_checkpoints/EfficientNet-B3_epoch_20.pth"
-efficientnet_checkpoint = torch.load(efficientnet_model_path, weights_only=False, map_location=device)
-efficientnet_model.load_state_dict(efficientnet_checkpoint['model_state_dict'])
+# In[ ]:
 
-# %% [markdown]
+
+# efficientnet_model_path = "EfficientNet-B3_checkpoints/EfficientNet-B3_epoch_20.pth"
+# efficientnet_checkpoint = torch.load(efficientnet_model_path, weights_only=False, map_location=device)
+# efficientnet_model.load_state_dict(efficientnet_checkpoint['model_state_dict'])
+
+
 # ### pAUC calculation
 
-# %%
-# efficientnet_model.eval()
-from calc_pauc import pAUC
-# calc_pAUC = pAUC(device, efficientnet_trainer.model, efficientnet_trainer.transform, X_test, y_test,  metadata_test)
-# pAUC_val = calc_pAUC.compute_pAUC()
-# print(f"pAUC for efficientnet: {pAUC_val}")
+# In[ ]:
 
-# %% [markdown]
+
+efficientnet_model.eval()
+from calc_pauc import pAUC
+calc_pAUC = pAUC(device, efficientnet_trainer.model, efficientnet_trainer.transform, X_test, y_test,  metadata_test)
+pAUC_val = calc_pAUC.compute_pAUC()
+print(f"pAUC for efficientnet: {pAUC_val}")
+
+
 # ## ResNet50
 
-# %%
-from torchvision.models import resnet50, ResNet50_Weights
+# In[34]:
 
-resnet_weights = ResNet50_Weights.DEFAULT
+
+# from torchvision.models import resnet50, ResNet50_Weightsabs
+from torchvision.models import resnet18, ResNet18_Weights
+resnet_weights = ResNet18_Weights.DEFAULT
 resnet_transform = resnet_weights.transforms()
+# resnet_weights = ResNet50_Weights.DEFAULTabs
+# resnet_transform = resnet_weights.transforms()
 
 resnet_train_dataset = HDF5Dataset(X_train, y_train, transform=resnet_transform)
 resnet_val_dataset = HDF5Dataset(X_val, y_val, transform=resnet_transform)
 resnet_model = resnet50(pretrained=True)
 resnet_model.fc = nn.Linear(resnet_model.fc.in_features, 1)
 
-lr = 4e-5
+lr = 5e-5
 num_epochs = 20
 resnet_trainer = Trainer(device, resnet_train_dataset, resnet_val_dataset, "ResNet50", resnet_weights, resnet_transform, resnet_model, malignant_count, benign_count, lr, num_epochs)
 
-# %%
+
+# In[35]:
+
+
 resnet_trainer.train()
 
-# %% [markdown]
+
 # ### Load ResNet50 if already trained and calculate pAUC
 
-# %%
+# In[ ]:
+
+
 # resnet_model_path = "ResNet50_checkpoints/ResNet50_epoch_20.pth"
 # resnet_checkpoint = torch.load(resnet_model_path, weights_only=False, map_location=device)
 # resnet_trainer.model.load_state_dict(resnet_checkpoint['model_state_dict'])
 
-# %% [markdown]
+
 # ### pAUC Calculation
 
-# %%
+# In[ ]:
+
+
 resnet_model.eval()
 calc_pAUC = pAUC(device, resnet_trainer.model, resnet_trainer.transform, X_test, y_test,  metadata_test)
 pAUC_val = calc_pAUC.compute_pAUC()
 print(f"pAUC for resnet: {pAUC_val}")
 
-# %% [markdown]
+
 # ## Output predictions for train/val/test for all CNN models
 
-# %% [markdown]
 # #### Convert CNNs's output predictions
 
-# %%
+# In[ ]:
+
+
 from sklearn.base import BaseEstimator, ClassifierMixin
 import torch.nn.functional as F
 from PIL import Image
@@ -524,15 +590,17 @@ class TorchCNNWrapper(BaseEstimator, ClassifierMixin):
         
     #     # return (probs[:, 1] >= self.threshold).astype(int)
 
-# %% [markdown]
+
 # ### Convert model into essemble model compatible format
 
-# %%
-# densenet_wrapper = TorchCNNWrapper(
-#     model=dense_net_trainer.model,
-#     device=device,
-#     transform=dense_net_trainer.transform
-# )
+# In[ ]:
+
+
+densenet_wrapper = TorchCNNWrapper(
+    model=dense_net_trainer.model,
+    device=device,
+    transform=dense_net_trainer.transform
+)
 
 efficientnet_wrapper = TorchCNNWrapper(
     model=efficientnet_trainer.model,
@@ -546,72 +614,91 @@ resnet_wrapper = TorchCNNWrapper(
     transform=resnet_trainer.transform
 )
 
-# %%
+
+# In[ ]:
+
+
 # generate predictions for training set
-# densenet_train_preds = densenet_wrapper.predict_proba(X_train)
+densenet_train_preds = densenet_wrapper.predict_proba(X_train)
 efficientnet_train_preds = efficientnet_wrapper.predict_proba(X_train)
 resnet_train_preds = resnet_wrapper.predict_proba(X_train)
 
-# %%
+
+# In[ ]:
+
+
 # generate predictions for validation set
-# densenet_val_preds = densenet_wrapper.predict_proba(X_val)
+densenet_val_preds = densenet_wrapper.predict_proba(X_val)
 efficientnet_val_preds = efficientnet_wrapper.predict_proba(X_val)
 resnet_val_preds = resnet_wrapper.predict_proba(X_val)
 
-# %%
+
+# In[ ]:
+
+
 # generate predictions for test set
-# densenet_test_preds = densenet_wrapper.predict_proba(X_test)
+densenet_test_preds = densenet_wrapper.predict_proba(X_test)
 efficientnet_test_preds = efficientnet_wrapper.predict_proba(X_test)
 resnet_test_preds = resnet_wrapper.predict_proba(X_test)
 
-# %%
+
+# In[ ]:
+
+
 # train predictions
 train_preds = pd.concat([
     pd.Series([row['isic_id'] for row in metadata_train], name="isic_id"),
-    # pd.Series(densenet_train_preds, name="densenet"),
+    pd.Series(densenet_train_preds, name="densenet"),
     pd.Series(efficientnet_train_preds, name="efficientnet"),
     pd.Series(resnet_train_preds, name="resnet"),
     pd.Series(y_train, name="GroundTruth")
 ], axis=1)
 
-# %%
+
+# In[ ]:
+
+
 # use pd concat to combine the predictions
 val_preds = pd.concat([
     pd.Series([row['isic_id'] for row in metadata_val], name="isic_id"),
-    # pd.Series(densenet_val_preds, name="densenet"),
+    pd.Series(densenet_val_preds, name="densenet"),
     pd.Series(efficientnet_val_preds, name="efficientnet"),
     pd.Series(resnet_val_preds, name="resnet"),
     pd.Series(y_val, name="GroundTruth")
 ], axis=1)
 
-# %%
+
+# In[ ]:
+
+
 # use pd concat to combine the predictions
 test_preds = pd.concat([
     pd.Series([row['isic_id'] for row in metadata_test], name="isic_id"),
-    # pd.Series(densenet_test_preds, name="densenet"),
+    pd.Series(densenet_test_preds, name="densenet"),
     pd.Series(efficientnet_test_preds, name="efficientnet"),
     pd.Series(resnet_test_preds, name="resnet"),
     pd.Series(y_test, name="GroundTruth")
 ], axis=1)
 
-# %%
+
+# In[ ]:
+
+
 train_preds.to_csv("train_predictions.csv", index=False)
 
-# %%
+
+# In[ ]:
+
+
 # save the predictions to csv
 val_preds.to_csv("val_predictions.csv", index=False)
 test_preds.to_csv("test_predictions.csv", index=False)
 
-# %% [markdown]
+
 # ## Load Tree based models
 
-# %% [markdown]
 # ### XGBoost
 
-# %% [markdown]
 # ### Light GBM
 
-# %% [markdown]
 # ### CatBoost
-
-
